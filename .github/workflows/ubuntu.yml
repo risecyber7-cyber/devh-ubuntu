@@ -31,59 +31,6 @@ jobs:
           echo "cloudlab:P@ssw0rd123" | sudo chpasswd
           sudo usermod -aG sudo cloudlab
 
-      - name: Configure XFCE for Lab User
-        run: |
-          sudo -u cloudlab bash -c 'echo "startxfce4" > ~/.xsession'
-
-      - name: Install Tailscale
-        run: |
-          curl -fsSL https://tailscale.com/install.sh | sh
-
-      - name: Start Tailscale
-        run: |
-          sudo tailscale up \
-            --authkey "${{ secrets.TS_AUTHKEY }}" \
-            --accept-routes
-
-      - name: Show System Information
-        run: |
-          echo "===== SYSTEM INFO ====="
-          uname -a
-          lsb_release -a || cat /etc/os-release
-
-          echo "===== CPU ====="
-          lscpu
-
-          echo "===== MEMORY ====="
-          free -h
-
-          echo "===== DISK ====="
-          df -h
-
-      - name: Show Tailscale IP
-        run: |
-          echo "===== TAILSCALE IP ====="
-          tailscale ip
-
-      - name: Show XRDP Status
-        run: |
-          echo "===== XRDP STATUS ====="
-          sudo systemctl status xrdp --no-pager || true
-
-          echo "===== LISTENING PORT ====="
-          sudo ss -tulpn | grep 3389 || true
-
-      - name: Connection Information
-        run: |
-          echo "=================================="
-          echo "Username : cloudlab"
-          echo "Password : P@ssw0rd123"
-          echo "Port     : 3389"
-          echo "Connect using the Tailscale IP shown above."
-          echo "=================================="
-
-      - name: Keep Lab Alive
-        run: |
-          while true; do
+  
             sleep 60
           done
