@@ -1,61 +1,89 @@
-name: Ubuntu VM Demo
+name: Ultimate Ubuntu CloudLab
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
 
 jobs:
-  ubuntu-demo:
+  ubuntulab:
     runs-on: ubuntu-latest
+    timeout-minutes: 360
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Display Ubuntu Information
+      - name: Update System
         run: |
-          echo "=== Operating System ==="
-          cat /etc/os-release
+          sudo apt-get update
 
-          echo ""
-          echo "=== Kernel ==="
+      - name: Install XFCE Desktop and XRDP
+        run: |
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            xfce4 xfce4-goodies \
+            xrdp
+
+          echo "startxfce4" > ~/.xsession
+
+          sudo adduser xrdp ssl-cert
+          sudo systemctl enable xrdp
+          sudo systemctl restart xrdp
+
+      - name: Create Lab User
+        run: |
+          sudo useradd -m -s /bin/bash cloudlab || true
+          echo "cloudlab:P@ssw0rd123" | sudo chpasswd
+          sudo usermod -aG sudo cloudlab
+
+      - name: Configure XFCE for Lab User
+        run: |
+          sudo -u cloudlab bash -c 'echo "startxfce4" > ~/.xsession'
+
+      - name: Install Tailscale
+        run: |
+          curl -fsSL https://tailscale.com/install.sh | sh
+
+      - name: Start Tailscale
+        run: |
+          sudo tailscale up \
+            --authkey "${{ secrets.TS_AUTHKEY }}" \
+            --accept-routes
+
+      - name: Show System Information
+        run: |
+          echo "===== SYSTEM INFO ====="
           uname -a
+          lsb_release -a || cat /etc/os-release
 
-          echo ""
-          echo "=== CPU ==="
+          echo "===== CPU ====="
           lscpu
 
-          echo ""
-          echo "=== Memory ==="
+          echo "===== MEMORY ====="
           free -h
 
-          echo ""
-          echo "=== Disk ==="
+          echo "===== DISK ====="
           df -h
 
-          echo ""
-          echo "=== Current User ==="
-          whoami
-
-          echo ""
-          echo "=== Working Directory ==="
-          pwd
-
-          echo ""
-          echo "=== Network ==="
-          ip addr || ifconfig
-
-      - name: Run some Ubuntu commands
+      - name: Show Tailscale IP
         run: |
-          sudo apt update
-          python3 --version
-          gcc --version || true
-          node --version || true
-          docker --version || true
+          echo "===== TAILSCALE IP ====="
+          tailscale ip
 
-      - name: Keep runner alive for demonstration
+      - name: Show XRDP Status
         run: |
-          echo "Sleeping for 10 minutes..."
-          sleep 600
+          echo "===== XRDP STATUS ====="
+          sudo systemctl status xrdp --no-pager || true
+
+          echo "===== LISTENING PORT ====="
+          sudo ss -tulpn | grep 3389 || true
+
+      - name: Connection Information
+        run: |
+          echo "=================================="
+          echo "Username : cloudlab"
+          echo "Password : P@ssw0rd123"
+          echo "Port     : 3389"
+          echo "Connect using the Tailscale IP shown above."
+          echo "=================================="
+
+      - name: Keep Lab Alive
+        run: |
+          while true; do
+            sleep 60
+          done
