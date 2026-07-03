@@ -1,0 +1,61 @@
+name: Ubuntu VM Demo
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  ubuntu-demo:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Display Ubuntu Information
+        run: |
+          echo "=== Operating System ==="
+          cat /etc/os-release
+
+          echo ""
+          echo "=== Kernel ==="
+          uname -a
+
+          echo ""
+          echo "=== CPU ==="
+          lscpu
+
+          echo ""
+          echo "=== Memory ==="
+          free -h
+
+          echo ""
+          echo "=== Disk ==="
+          df -h
+
+          echo ""
+          echo "=== Current User ==="
+          whoami
+
+          echo ""
+          echo "=== Working Directory ==="
+          pwd
+
+          echo ""
+          echo "=== Network ==="
+          ip addr || ifconfig
+
+      - name: Run some Ubuntu commands
+        run: |
+          sudo apt update
+          python3 --version
+          gcc --version || true
+          node --version || true
+          docker --version || true
+
+      - name: Keep runner alive for demonstration
+        run: |
+          echo "Sleeping for 10 minutes..."
+          sleep 600
